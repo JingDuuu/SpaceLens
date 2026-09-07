@@ -24,6 +24,7 @@ let electron,page;const report={checks:[],errors:[]};
 (async()=>{
  const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
  electron=await _electron.launch({executablePath:path.join(root,'SpaceLens.exe'),env,timeout:30000});page=await electron.firstWindow();page.on('pageerror',e=>report.errors.push(e.message));
+ await page.locator('#mode-space').click();
  await page.waitForFunction(()=>document.querySelector('#summary-files')?.textContent==='6');
  await page.locator('#treemap').click({position:{x:80,y:60}});
  await page.waitForFunction(()=>document.querySelector('#treemap').dataset.previewId==='1'&&document.querySelector('#treemap').dataset.previewCount==='3');
@@ -47,14 +48,12 @@ let electron,page;const report={checks:[],errors:[]};
  await electron.evaluate(({dialog})=>{dialog.showMessageBox=async()=>({response:0});});await page.locator('#cleanup-apply').click();await page.waitForFunction(()=>document.querySelector('#cleanup-status').textContent.includes('已取消'));assert.ok(fs.existsSync(path.join(scratch,'disposable.tmp')));
  await electron.evaluate(({dialog})=>{dialog.showMessageBox=async()=>({response:1});});await page.locator('#cleanup-apply').click();await page.waitForFunction(()=>document.querySelector('#cleanup-status').textContent.includes('已删除 1'));assert.equal(fs.existsSync(path.join(scratch,'disposable.tmp')),false);
  report.checks.push('Reviewed cleanup native confirmation boundary: Cancel preserves fixture; Confirm removes only disposable fixture');
+ fs.writeFileSync(path.join(scratch,'quick-test.tmp'),'another disposable test');await page.locator('#cleanup-quick').click();await page.waitForFunction(()=>document.querySelector('#cleanup-status').textContent.includes('普通垃圾处理完成'));assert.equal(fs.existsSync(path.join(scratch,'quick-test.tmp')),false);report.checks.push('One-click cleanup processes only the injected old temporary fixture');
  await page.locator('#cleanup-tab-apps').click();await page.waitForFunction(()=>document.querySelector('#cleanup-app-list').textContent.includes('Demo Video Editor'));assert.ok(!(await page.locator('#cleanup-app-list').innerText()).includes('Unknown Demo App'));
  await page.locator('#cleanup-unknown').check();assert.match(await page.locator('#cleanup-app-list').innerText(),/Unknown Demo App/);
- await page.locator('#cleanup-app-list .cleanup-app').filter({hasText:'Demo Video Editor'}).getByRole('button').click();await page.waitForFunction(()=>document.querySelector('#cleanup-status').textContent.includes('名称已复制'));
- const native=await electron.evaluate(async({clipboard})=>({urls:globalThis.testExternal,copied:await clipboard.readText()}));assert.equal(native.urls[0],'ms-settings:appsfeatures');assert.equal(native.copied,'Demo Video Editor');
- report.checks.push('App estimates, age/unknown separation, exact copied name and fixed Windows uninstall URI');
+ assert.match(await page.locator('#cleanup-app-list').innerText(),/卸载应用/);
+ report.checks.push('App estimates, age/unknown separation and in-app uninstall entry');
  await page.screenshot({path:path.join(project,'assets','demo','app-cleanup.png')});
  await page.locator('#cleanup-close').click();await electron.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1000,740));await page.waitForFunction(()=>innerWidth<1100);await page.locator('#cleanup-launch').click();
  const overflow=await page.evaluate(()=>{const d=document.querySelector('#cleanup-dialog');return d.scrollWidth>d.clientWidth;});assert.equal(overflow,false);report.checks.push('Cleanup center fits narrow desktop window');assert.deepEqual(report.errors,[]);report.passed=true;
 })().catch(e=>{report.error=e.stack;process.exitCode=1;console.error(e.stack);}).finally(async()=>{if(page&&!report.passed)await page.screenshot({path:path.join(project,'tests','product-failure.png')}).catch(()=>{});if(electron)await electron.close();fs.writeFileSync(path.join(project,'tests','product-results.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));});
-
-

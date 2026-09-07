@@ -3,7 +3,9 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const root=path.resolve(__dirname,'..'),version=require('../package.json').version;
 const runtimeArg=process.argv.indexOf('--runtime');
 const runtime=runtimeArg>=0?path.resolve(process.argv[runtimeArg+1]):path.join(root,'node_modules','electron','dist');
-const out=path.join(root,'dist','SpaceLens');
+const outArg=process.argv.indexOf('--out'),outName=outArg>=0?process.argv[outArg+1]:'SpaceLens';
+if(!/^[A-Za-z0-9_.-]+$/.test(outName)||outName==='..')throw Error('Invalid output folder');
+const out=path.join(root,'dist',outName);
 function run(exe,args){const result=spawnSync(exe,args,{cwd:root,stdio:'inherit',windowsHide:true});if(result.status!==0)throw new Error(`${exe} failed (${result.status})`);}
 function copy(from,to){fs.mkdirSync(path.dirname(to),{recursive:true});fs.copyFileSync(from,to);}
 function tree(from,to,filter=()=>true){for(const entry of fs.readdirSync(from,{withFileTypes:true})){if(!filter(entry.name))continue;const src=path.join(from,entry.name),dst=path.join(to,entry.name);if(entry.isDirectory())tree(src,dst,filter);else copy(src,dst);}}
@@ -22,17 +24,24 @@ for(const name of ['spacelens.ico','spacelens.png'])copy(path.join(root,'assets'
 for(const name of ['README.md','LICENSE','THIRD_PARTY_NOTICES.md','package.json'])copy(path.join(root,name),path.join(out,name));
 copy(path.join(root,'licenses','Electron-LICENSE.txt'),path.join(out,'licenses','Electron-LICENSE.txt'));
 for(const name of ['DotNet-LICENSE.txt','DotNet-ThirdPartyNotices.txt'])copy(path.join(root,'licenses',name),path.join(out,'licenses',name));
+copy(path.join(root,'licenses','Everything-LICENSE.txt'),path.join(out,'licenses','Everything-LICENSE.txt'));
 copy(path.join(root,'docs','OPEN_SOURCE.md'),path.join(out,'docs','OPEN_SOURCE.md'));
 if(fs.existsSync(path.join(root,'assets','demo')))tree(path.join(root,'assets','demo'),path.join(out,'assets','demo'));
 fs.mkdirSync(path.join(out,'resources','app'),{recursive:true});
 fs.writeFileSync(path.join(out,'resources','app','package.json'),JSON.stringify({name:'spacelens',version,main:'../../src/main.cjs'}));
 fs.writeFileSync(path.join(out,'spacelens.cmd'),'@echo off\r\nsetlocal\r\nset "ELECTRON_RUN_AS_NODE=1"\r\nset "SPACELENS_HOME=%~dp0"\r\n"%~dp0SpaceLens.exe" "%~dp0src\\cli.cjs" %*\r\n');
-fs.writeFileSync(path.join(out,'Start SpaceLens.cmd'),'@echo off\r\nstart "" "%~dp0SpaceLens.exe"\r\n');
+fs.writeFileSync(path.join(out,'Start SpaceLens.cmd'),'@echo off\r\nsetlocal\r\nset "ELECTRON_RUN_AS_NODE="\r\nstart "" "%~dp0SpaceLens.exe"\r\n');
 run('dotnet',['publish',path.join(root,'src','scanner','SpaceLens.Scanner.csproj'),'-c','Release','-r','win-x64','--self-contained','true','-o',path.join(out,'runtime','scanner')]);
+run('dotnet',['publish',path.join(root,'src','search-native','SpaceLens.Search.csproj'),'-c','Release','-r','win-x64','--self-contained','true','-o',path.join(out,'runtime','search')]);
+const cache=path.join(root,'dist','build-cache');fs.mkdirSync(cache,{recursive:true});
+const archive=path.join(cache,'Everything-1.4.1.1032.x64.zip');
+if(!fs.existsSync(archive))run('curl.exe',['--fail','--location','--retry','3','--max-time','120','--output',archive,'https://www.voidtools.com/Everything-1.4.1.1032.x64.zip']);
+if(crypto.createHash('sha256').update(fs.readFileSync(archive)).digest('hex')!=='698df475ec44e638f66f1b6a32d28fea613cec78d3b6310e6abe53431eeb940c')throw Error('Everything download checksum mismatch');
+run('tar.exe',['-xf',archive,'-C',cache]);copy(path.join(cache,'Everything.exe'),path.join(out,'runtime','search','Everything.exe'));
 if(fs.existsSync(path.join(out,'data')))throw new Error('A release must not include local data.');
 console.log('Portable build: '+out);
 if(process.argv.includes('--zip')){
  const zip=path.join(root,'dist',`SpaceLens-${version}-Windows-x64.zip`);
- run('tar.exe',['-a','-c','-f',zip,'-C',path.join(root,'dist'),'SpaceLens']);
+ run('tar.exe',['-a','-c','-f',zip,'-C',path.join(root,'dist'),outName]);
  const hash=crypto.createHash('sha256').update(fs.readFileSync(zip)).digest('hex');fs.writeFileSync(zip+'.sha256',`${hash}  ${path.basename(zip)}\n`);console.log('ZIP SHA-256: '+hash);
 }

@@ -1,8 +1,8 @@
 {
   "name": "spacelens",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Portable Windows disk explorer with folder X-ray, reviewed cleanup, CLI/MCP",
+  "description": "Portable Windows instant search, disk treemap and reviewed cleanup",
   "main": "src/main.cjs",
   "license": "MIT",
   "scripts": {

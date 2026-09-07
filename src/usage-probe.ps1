@@ -80,7 +80,7 @@ foreach ($hive in @([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win
                     if ($icon -match '^\s*"([^"]+\.exe)"(?:\s*,\s*-?\d+)?\s*$') { $executable = Resolve-EvidencePath $Matches[1] }
                     elseif ($icon -match '^\s*([^"].*\.exe)(?:\s*,\s*-?\d+)?\s*$') { $executable = Resolve-EvidencePath $Matches[1] }
                     # DisplayIcon identifies only an executable, never its guessed parent folder.
-                    $apps.Add([ordered]@{ name = $displayName; installLocation = $installLocation; executable = $executable; estimatedSizeKB = $appKey.GetValue('EstimatedSize', 0); publisher = [string]$appKey.GetValue('Publisher', ''); version = [string]$appKey.GetValue('DisplayVersion', '') })
+                    $apps.Add([ordered]@{ name = $displayName; installLocation = $installLocation; executable = $executable; estimatedSizeKB = $appKey.GetValue('EstimatedSize', 0); publisher = [string]$appKey.GetValue('Publisher', ''); version = [string]$appKey.GetValue('DisplayVersion', ''); uninstall = @{ hive = $hive.ToString(); view = $view.ToString(); key = $subkeyName } })
                 } catch { } finally { if ($null -ne $appKey) { $appKey.Dispose() } }
             }
         } catch { $warnings.Add('An uninstall registry view could not be read.') }

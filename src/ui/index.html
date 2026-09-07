@@ -9,6 +9,9 @@
   <script defer src="app.js"></script>
   <link rel="stylesheet" href="cleanup.css">
   <script defer src="cleanup.js"></script>
+  <link rel="stylesheet" href="search.css">
+  <script src="cleanup-large.js" defer></script>
+  <script src="search.js" defer></script>
 </head>
 <body>
   <svg class="icon-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -32,7 +35,7 @@
       <span class="brand-name">SpaceLens<span>空间透镜</span></span>
     </a>
     <span class="header-purpose">看清空间，找到文件。</span>
-    <div class="header-actions"><span id="connection-state" class="local-status"><span></span>本机读取</span><button id="export-button" class="button quiet" disabled><svg><use href="#i-download"/></svg>导出快照</button></div>
+    <div class="header-actions"><span id="connection-state" class="local-status"><span></span>本地运行</span><button id="export-button" class="button quiet" disabled><svg><use href="#i-download"/></svg>导出快照</button></div>
   </header>
   <main class="app-shell">
     <section class="scan-section" aria-label="选择扫描位置">
@@ -115,10 +118,10 @@
           <section class="detail-section evidence-section"><div class="section-heading"><h3>使用记录</h3><span id="evidence-confidence" class="evidence-badge">未知</span></div><strong id="evidence-title" class="evidence-title">没有可靠的使用记录</strong><p id="evidence-note" class="explanation"></p><dl class="detail-facts"><div><dt>依据</dt><dd id="evidence-source">—</dd></div><div id="evidence-date-row" hidden><dt>记录时间</dt><dd id="evidence-date"></dd></div></dl></section>
           <div id="detail-warning" class="panel-note" hidden></div><button id="copy-path" class="button quiet full-width"><svg><use href="#i-copy"/></svg>复制完整路径</button>
         </div>
-        <div class="rail-footer"><svg><use href="#i-check"/></svg><p>先看清，再整理。<br>应用卸载交给 Windows。</p></div>
+        <div class="rail-footer"><svg><use href="#i-check"/></svg><p>先看清，再整理。<br>清理中心内直接整理。</p></div>
       </aside>
     </div>
-    <footer class="app-footer"><span id="footer-status">准备就绪</span><span>大小按文件逻辑长度统计 · 不跟随目录联接与符号链接</span><span>SpaceLens 1.2</span></footer>
+    <footer class="app-footer"><span id="footer-status">准备就绪</span><span>大小按文件逻辑长度统计 · 不跟随目录联接与符号链接</span><span>SpaceLens 2.0</span></footer>
   </main>
   <dialog id="issues-dialog"><form method="dialog" class="dialog-heading"><h2>扫描中未读取的项目</h2><button class="icon-button" aria-label="关闭扫描问题"><svg><use href="#i-close"/></svg></button></form><p id="issues-summary"></p><div id="issues-list"></div><p class="explanation">无法访问的文件夹、目录联接与符号链接会被跳过，避免重复计数和越界扫描。已显示的大小可能小于实际占用。</p></dialog>
   <div id="toast" class="toast" role="status" hidden></div>

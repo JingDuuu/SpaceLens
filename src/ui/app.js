@@ -1073,5 +1073,5 @@
     for (const result of results) if (result.status === 'rejected') notice(result.reason?.message || '初始化没有完成，请重新打开软件。', true);
     void refreshUsage();
   }
-  void boot();
+  let booted=false;window.addEventListener('spacelens-space',()=>{if(!booted){booted=true;void invoke('initializeSpace').then(boot).catch(e=>{booted=false;notice(e.message,true);});}});
 })();

@@ -58,7 +58,7 @@ class SpaceService extends EventEmitter {
   }
   top(options={}){this.requireSnapshot();const store=this.store;if(store)return store.getTopAsync(options).then(r=>{if(this.store!==store)throw new Error('快照已切换，请重新浏览');return {...r,items:r.items.map(n=>this.enrich(n))};});const limit=integer(options.limit,100,1000);let total=0;const selected=[];for(const n of this.snapshot.nodes){if(n.kind!=='file'||!this.match(n,options))continue;total++;if(selected.length===limit&&n.bytes<=selected[selected.length-1]?.bytes)continue;selected.push(n);selected.sort((a,b)=>b.bytes-a.bytes);if(selected.length>limit)selected.pop();}return {items:selected.map(n=>this.enrich(n)),total};}
   async state(){return {scanning:this.scanning,loading:this.loading,progress:this.progress,snapshot:this.snapshot?meta(this.snapshot):null,history:await this.history()};}
-  async drives(){const code="[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); $d=@([System.IO.DriveInfo]::GetDrives() | Where-Object {$_.IsReady} | ForEach-Object {[pscustomobject]@{path=$_.Name;label=$_.VolumeLabel;total=$_.TotalSize;free=$_.AvailableFreeSpace;type=$_.DriveType.ToString()}}); ConvertTo-Json -InputObject $d -Compress";const {stdout}=await exec(POWERSHELL,['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(code,'utf16le').toString('base64')],{windowsHide:true,timeout:15000,maxBuffer:1024*1024,encoding:'utf8'});return JSON.parse(stdout.trim()||'[]');}
+  async drives(){const code="[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); $d=@([System.IO.DriveInfo]::GetDrives() | Where-Object {$_.IsReady} | ForEach-Object {[pscustomobject]@{path=$_.Name;label=$_.VolumeLabel;total=$_.TotalSize;free=$_.AvailableFreeSpace;type=$_.DriveType.ToString();format=$_.DriveFormat}}); ConvertTo-Json -InputObject $d -Compress";const {stdout}=await exec(POWERSHELL,['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(code,'utf16le').toString('base64')],{windowsHide:true,timeout:15000,maxBuffer:1024*1024,encoding:'utf8'});return JSON.parse(stdout.trim()||'[]');}
   async usage({refresh=false}={}){if(refresh)this.usagePromise=null;if(!this.usagePromise){this.usagePromise=require('./usage.cjs').collectUsage().then(data=>{this.usageData=data;return data;}).catch(e=>{this.usagePromise=null;throw e;});}return this.usagePromise;}
   async scan({path:target,workers}={}){
     if(this.scanning)throw new Error('已有扫描正在进行');
@@ -132,6 +132,10 @@ class SpaceService extends EventEmitter {
   cleanupDetails(args){return this.cleaner.details(args);}
   cleanupCancel(){return this.cleaner.cancel();}
   async cleanupApps(args={}){return require('./cleanup.cjs').appCandidates(await this.usage({refresh:Boolean(args.refresh)}),args);}
-  close(){this.store?.close();this.store=null;}
+  get searchEngine(){if(!this.searcher)this.searcher=new (require("./search.cjs").SearchEngine)(this.root,()=>this.drives());return this.searcher;}
+  async initializeSpace(){if(!this.spaceInit)this.spaceInit=this.initialize();await this.spaceInit;return this.state();}
+  searchStatus(){return this.searchEngine.status();}
+  search(args){return this.searchEngine.query(args);}
+  close(){this.searcher?.close();this.store?.close();this.store=null;}
 }
 module.exports={SpaceService,ROOT,meta,samePath};

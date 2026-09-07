@@ -145,6 +145,7 @@ function normalizeProbe(probe = {}, now = Date.now()) {
     app.estimatedBytes=Number.isFinite(estimated)&&estimated>0&&estimated<Number.MAX_SAFE_INTEGER/1024?Math.round(estimated*1024):null;
     app.publisher=typeof raw.publisher==='string'?raw.publisher:'';
     app.version=typeof raw.version==='string'?raw.version:'';
+    app.uninstall=raw.uninstall&&typeof raw.uninstall.key==='string'?raw.uninstall:null;
     apps.push(app);
   }
   const rawPolicy = typeof probe.lastAccessPolicy === 'string' && /^NtfsDisableLastAccessUpdate=(0x[0-9A-F]+);/i.exec(probe.lastAccessPolicy);

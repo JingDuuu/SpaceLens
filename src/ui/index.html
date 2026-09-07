@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'">
+  <title>SpaceLens · 空间透镜</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="app.js"></script>
+  <link rel="stylesheet" href="cleanup.css">
+  <script defer src="cleanup.js"></script>
+</head>
+<body>
+  <svg class="icon-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3Z"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m6 10 6-6 6 6M12 4v16"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8Z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M13 3v18M13 12h8M3 16h10"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 5h12M9 12h12M9 19h12M3 5h1M3 12h1M3 19h1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V3H3v13h5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-disk" viewBox="0 0 24 24"><path d="M5 3h14l2 12v6H3v-6Z"/><path d="M3 15h18M16 18h2M5 18h7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  </svg>
+  <header class="app-header">
+    <a class="brand" href="#" id="home-link" aria-label="SpaceLens 返回扫描根目录">
+      <span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="brand-name">SpaceLens<span>空间透镜</span></span>
+    </a>
+    <span class="header-purpose">看清空间，找到文件。</span>
+    <div class="header-actions"><span id="connection-state" class="local-status"><span></span>本机读取</span><button id="export-button" class="button quiet" disabled><svg><use href="#i-download"/></svg>导出快照</button></div>
+  </header>
+  <main class="app-shell">
+    <section class="scan-section" aria-label="选择扫描位置">
+      <div class="scan-heading"><h1>空间总览</h1><span>选一个硬盘，或从文件夹开始。</span></div>
+      <form id="scan-form" class="scan-controls">
+        <div class="drive-control"><svg><use href="#i-disk"/></svg><select id="drive-select" aria-label="选择硬盘"><option value="">读取硬盘列表…</option></select></div>
+        <input id="path-input" aria-label="硬盘或文件夹完整路径" spellcheck="false" autocomplete="off" placeholder="输入文件夹路径，例如 D:\素材" required>
+        <button id="choose-folder" type="button" class="button"><svg><use href="#i-folder"/></svg>选择文件夹</button>
+        <button id="scan-button" type="submit" class="button primary"><svg><use href="#i-search"/></svg><span>开始扫描</span></button>
+        <button id="cancel-button" type="button" class="button danger" hidden>停止扫描</button>
+      </form>
+      <div id="drive-capacity" class="drive-capacity" hidden><div class="capacity-track"><span id="capacity-fill"></span></div><span id="capacity-text"></span></div>
+    </section>
+    <section id="progress-section" class="scan-progress" aria-label="扫描进度" hidden>
+      <div class="progress-copy"><span class="progress-indicator" aria-hidden="true"></span><strong id="progress-title">正在准备扫描</strong><span id="progress-count">0 个文件</span><span id="progress-bytes">0 B</span><span id="progress-rate"></span><time id="progress-time">0 秒</time></div>
+      <ol id="phase-steps" class="phase-steps" aria-label="处理阶段"></ol>
+      <div id="progress-track" class="progress-track indeterminate" role="progressbar" aria-label="当前处理阶段"><span id="progress-fill"></span></div>
+      <div class="progress-detail"><span id="progress-detail">正在连接本机扫描引擎</span><span class="progress-location" id="progress-path"></span></div>
+      <p id="progress-note" class="progress-note">扫描过程中可继续查看上一份快照。</p>
+    </section>
+    <div id="notice" class="notice" role="status" hidden><span id="notice-message"></span><button id="notice-close" class="icon-button" aria-label="关闭提示"><svg><use href="#i-close"/></svg></button></div>
+    <div id="activity-status" class="activity-status" role="status" aria-live="polite" hidden><span class="activity-indicator" aria-hidden="true"></span><span id="activity-message"></span></div>
+    <div id="snapshot-context" class="snapshot-context" hidden></div>
+    <section id="snapshot-summary" class="snapshot-summary" aria-label="扫描摘要" hidden>
+      <div class="summary-main"><span class="eyebrow">已读取的文件大小</span><strong id="summary-bytes">0 B</strong></div>
+      <div class="summary-item"><strong id="summary-files">0</strong><span>个文件</span></div>
+      <div class="summary-item"><strong id="summary-dirs">0</strong><span>个文件夹</span></div>
+      <div class="summary-item"><strong id="summary-time">—</strong><span>扫描用时</span></div>
+      <div class="summary-record"><span id="snapshot-status" class="status-tag">扫描完成</span><span id="summary-date"></span><button class="text-button" id="scan-issues" hidden></button></div>
+    </section>
+    <div class="workspace-toolbar">
+      <nav class="view-tabs" role="tablist" aria-label="查看方式">
+        <button class="view-tab active" id="tab-map" role="tab" aria-selected="true" aria-controls="panel-map" data-tab="map"><svg><use href="#i-map"/></svg>空间地图</button>
+        <button class="view-tab" id="tab-large" role="tab" aria-selected="false" aria-controls="panel-large" data-tab="large">大文件</button>
+        <button class="view-tab" id="tab-apps" role="tab" aria-selected="false" aria-controls="panel-apps" data-tab="apps">软件使用线索</button>
+        <button class="view-tab" id="tab-changes" role="tab" aria-selected="false" aria-controls="panel-changes" data-tab="changes">空间变化</button>
+      </nav>
+      <div class="history-controls"><svg><use href="#i-clock"/></svg><select id="history-select" aria-label="查看历史扫描记录"><option value="">暂无扫描记录</option></select></div>
+    </div>
+    <div class="workspace">
+      <section class="explorer-area" aria-label="空间浏览">
+        <div id="empty-start" class="empty-start">
+          <div class="empty-map" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          <h2>硬盘里，什么占了大头？</h2>
+          <p>扫描后，每一个色块就是一个文件或文件夹。<br>块越大，占用越多；选中它，就能一键打开所在位置。</p>
+          <button class="button primary" id="empty-choose"><svg><use href="#i-folder"/></svg>选择文件夹开始</button>
+          <p class="empty-footnote">文件留在本机 · 清理中心先预览后确认</p>
+        </div>
+        <div id="explorer-content" hidden>
+          <div class="location-bar"><div class="nav-row"><button id="up-button" class="button nav-button" aria-label="返回上一级文件夹" title="返回上一级 · Alt + ↑"><svg><use href="#i-up"/></svg>返回上一级</button><button id="enter-folder" class="button nav-button" disabled title="进入当前选中的文件夹 · Enter"><svg><use href="#i-folder"/></svg>进入选中文件夹</button><button id="open-current" class="button nav-button" title="在资源管理器中打开当前文件夹"><svg><use href="#i-open"/></svg>打开当前文件夹</button></div><nav id="breadcrumbs" class="breadcrumbs" aria-label="当前位置"></nav></div>
+          <div class="filter-bar" id="filter-bar">
+            <label class="search-control"><svg><use href="#i-search"/></svg><input id="search-input" placeholder="搜索当前层的名称" aria-label="搜索文件名称" autocomplete="off"></label>
+            <select id="category-select" aria-label="按文件类型筛选"><option value="all">所有类型</option><option value="video">视频</option><option value="image">图片</option><option value="audio">音频</option><option value="archive">压缩包</option><option value="software">程序</option><option value="document">文档</option><option value="folder">文件夹</option><option value="other">其他</option></select>
+            <select id="older-select" aria-label="按最后修改时间筛选"><option value="0">不限修改时间</option><option value="90">90 天未修改</option><option value="180">180 天未修改</option><option value="365">365 天未修改</option></select>
+          </div>
+          <div id="filter-explainer" class="filter-explainer" hidden>文件夹按内容最近修改时间筛选；修改时间不能证明多久没使用。</div>
+          <section id="panel-map" role="tabpanel" aria-labelledby="tab-map">
+            <div class="map-toolbar"><div><strong id="folder-name">—</strong><span id="folder-count"></span></div><div class="segmented" role="group" aria-label="地图或列表"><button id="mode-map" class="active" aria-pressed="true"><svg><use href="#i-map"/></svg>地图</button><button id="mode-list" aria-pressed="false"><svg><use href="#i-list"/></svg>列表</button></div></div>
+            <div class="treemap-wrap" id="treemap-wrap"><canvas id="treemap" tabindex="0" role="img" aria-label="文件占用地图，方向键选择项目，Enter 进入文件夹，使用列表查看所有项目。"></canvas><div id="map-empty" class="inline-empty" hidden></div><div id="map-tooltip" class="map-tooltip" hidden></div></div>
+            <div id="map-help" class="map-help"><span><span class="key-dot"></span>单击选中 · 双击进入 · 右键打开资源管理器</span><span>Enter 进入 · Alt + ↑ 返回</span></div>
+            <div id="file-list" class="file-list" hidden></div>
+            <div class="pagination" id="map-pagination"><span id="page-caption"></span><div><button id="page-prev" class="button compact">上一页</button><button id="page-next" class="button compact">下一页</button></div></div>
+            <div class="category-legend" aria-label="色块类型"><span><i class="category-folder"></i>文件夹</span><span><i class="category-video"></i>视频</span><span><i class="category-image"></i>图片</span><span><i class="category-audio"></i>音频</span><span><i class="category-archive"></i>压缩包</span><span><i class="category-software"></i>程序</span><span><i class="category-document"></i>文档</span><span><i class="category-other"></i>其他</span></div>
+          </section>
+          <section id="panel-large" role="tabpanel" aria-labelledby="tab-large" hidden><div class="panel-heading"><div><h2>最大的文件</h2><p id="large-caption">按大小排列，覆盖本次扫描的全部文件夹。</p></div></div><div id="large-list" class="file-list"></div><div class="pagination" id="large-pagination"><span id="large-page-caption"></span><div><button id="large-prev" class="button compact">上一页</button><button id="large-next" class="button compact">下一页</button></div></div></section>
+          <section id="panel-apps" role="tabpanel" aria-labelledby="tab-apps" hidden><div class="panel-heading"><div><h2>多久没打开过？看记录再判断。</h2><p>读取 Windows 可提供的程序启动线索。没有记录不代表没用过。</p></div><button id="refresh-usage" class="button compact">重新读取</button></div><div id="usage-warnings" class="panel-note" hidden></div><div class="apps-filter"><label class="search-control"><svg><use href="#i-search"/></svg><input id="app-search" placeholder="搜索软件名称" aria-label="搜索软件名称"></label><select id="app-age" aria-label="按程序使用记录筛选"><option value="all">全部使用线索</option><option value="90">记录在 90 天前</option><option value="180">记录在 180 天前</option><option value="365">记录在 365 天前</option><option value="unknown">没有可靠记录</option></select></div><div id="apps-list" class="apps-list"></div><div class="pagination" id="apps-pagination"><span id="apps-page-caption"></span><div><button id="apps-prev" class="button compact">上一页</button><button id="apps-next" class="button compact">下一页</button></div></div></section>
+          <section id="panel-changes" role="tabpanel" aria-labelledby="tab-changes" hidden><div class="panel-heading"><div><h2>哪一块变大了？</h2><p>和同一路径的历史扫描比较，定位空间变化。</p></div></div><div class="compare-controls"><label for="compare-select">和这次扫描对比</label><select id="compare-select" aria-label="选择对比快照"><option value="">需要同一路径的历史扫描</option></select><button id="compare-button" class="button">查看变化</button></div><div id="compare-note" class="panel-note">对比根目录下一层的累计文件大小。再次扫描相同路径后，即可查看变化。</div><div id="changes-list" class="changes-list"></div><div class="pagination" id="changes-pagination" hidden><span id="changes-page-caption"></span><div><button id="changes-prev" class="button compact">上一页</button><button id="changes-next" class="button compact">下一页</button></div></div></section>
+        </div>
+      </section>
+      <aside class="detail-rail" aria-label="所选项目详情">
+        <div class="rail-heading"><span>所选项目</span><span id="selection-type" class="muted">—</span></div>
+        <div id="detail-empty" class="detail-empty"><svg><use href="#i-map"/></svg><h2>点一块，看看里面。</h2><p>文件大小、修改时间和软件使用线索都会显示在这里。</p><div class="detail-demo-action"><svg><use href="#i-open"/></svg>在资源管理器中打开</div><p>找到要整理的内容后，用这个按钮直接打开。</p></div>
+        <div id="detail-content" hidden>
+          <h2 id="detail-name"></h2><p id="detail-path" class="detail-path"></p>
+          <div class="detail-size"><strong id="detail-bytes"></strong><span id="detail-share"></span></div>
+          <button id="open-selected" class="button primary open-button"><svg><use href="#i-open"/></svg>在资源管理器中打开</button>
+          <p id="open-hint" class="action-hint">打开文件夹，在熟悉的位置整理文件。</p>
+          <button id="enter-selected" class="button full-width"><svg><use href="#i-folder"/></svg>进入文件夹查看</button>
+          <section class="detail-section"><h3>文件信息</h3><dl class="detail-facts"><div id="detail-counts"><dt>包含</dt><dd id="detail-contents"></dd></div><div><dt id="detail-modified-label">最后修改</dt><dd id="detail-modified"></dd></div><div><dt>最后访问</dt><dd id="detail-accessed"></dd></div></dl><p class="explanation">文件时间不等于使用时间。Windows 的访问时间可能没有及时更新。</p></section>
+          <section class="detail-section evidence-section"><div class="section-heading"><h3>使用记录</h3><span id="evidence-confidence" class="evidence-badge">未知</span></div><strong id="evidence-title" class="evidence-title">没有可靠的使用记录</strong><p id="evidence-note" class="explanation"></p><dl class="detail-facts"><div><dt>依据</dt><dd id="evidence-source">—</dd></div><div id="evidence-date-row" hidden><dt>记录时间</dt><dd id="evidence-date"></dd></div></dl></section>
+          <div id="detail-warning" class="panel-note" hidden></div><button id="copy-path" class="button quiet full-width"><svg><use href="#i-copy"/></svg>复制完整路径</button>
+        </div>
+        <div class="rail-footer"><svg><use href="#i-check"/></svg><p>先看清，再整理。<br>应用卸载交给 Windows。</p></div>
+      </aside>
+    </div>
+    <footer class="app-footer"><span id="footer-status">准备就绪</span><span>大小按文件逻辑长度统计 · 不跟随目录联接与符号链接</span><span>SpaceLens 1.2</span></footer>
+  </main>
+  <dialog id="issues-dialog"><form method="dialog" class="dialog-heading"><h2>扫描中未读取的项目</h2><button class="icon-button" aria-label="关闭扫描问题"><svg><use href="#i-close"/></svg></button></form><p id="issues-summary"></p><div id="issues-list"></div><p class="explanation">无法访问的文件夹、目录联接与符号链接会被跳过，避免重复计数和越界扫描。已显示的大小可能小于实际占用。</p></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <div id="context-menu" class="context-menu" role="menu" aria-label="所选项目操作" hidden>
+    <div id="context-title" class="context-menu-title"></div>
+    <button id="context-open" class="context-item" role="menuitem"><svg><use href="#i-open"/></svg><span>在资源管理器中打开</span></button>
+    <button id="context-enter" class="context-item" role="menuitem"><svg><use href="#i-folder"/></svg><span>进入文件夹</span><span class="context-shortcut">Enter</span></button>
+    <button id="context-copy" class="context-item" role="menuitem"><svg><use href="#i-copy"/></svg><span>复制完整路径</span></button>
+  </div>
+</body>
+</html>

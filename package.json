@@ -1,0 +1,19 @@
+{
+  "name": "spacelens",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Portable Windows disk explorer with folder X-ray, reviewed cleanup, CLI/MCP",
+  "main": "src/main.cjs",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "start": "electron .",
+    "build": "node scripts/build.cjs",
+    "release": "node scripts/build.cjs --zip"
+  },
+  "devDependencies": {
+    "electron": "44.2.0",
+    "playwright-core": "1.56.1",
+    "rcedit": "5.0.2"
+  }
+}

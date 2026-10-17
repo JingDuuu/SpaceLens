@@ -29,6 +29,7 @@ jobs:
           Copy-Item dist/SpaceLens/runtime/scanner/SpaceLens.Scanner.exe runtime/scanner/
           node tests/scanner-contract.cjs
       - name: Resource monitor and real ETW attribution
+        timeout-minutes: 3
         env:
           SPACELENS_TEST_RELEASE: ${{ github.workspace }}/dist/SpaceLens
           SPACELENS_TEST_ETW: '1'

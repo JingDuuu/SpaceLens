@@ -12,8 +12,10 @@ app.setPath('userData',path.join(data,'desktop'));
 app.setPath('sessionData',path.join(data,'desktop','session'));
 app.setAppUserModelId('studio.spacelens.desktop');
 const gotLock=app.requestSingleInstanceLock();
-let win,service,quitting=false,searchStopped=false;
-app.on('before-quit',event=>{quitting=true;if(service?.scanning){event.preventDefault();service.cancel();service.idlePromise.finally(()=>app.quit());}else if(service?.cleanupEngine?.busy){event.preventDefault();service.cleanupEngine.cancel();service.cleanupEngine.idlePromise.finally(()=>app.quit());}else if(service?.searcher&&!searchStopped){event.preventDefault();searchStopped=true;service.searcher.shutdown().finally(()=>app.quit());}else service?.close();});
+let win,service,quitting=false,searchStopped=false,resourceMonitor,resourcesStopped=false;
+const getResources=()=>{if(!resourceMonitor){resourceMonitor=new(require('./resources.cjs').ResourceMonitor)(root);resourceMonitor.on('sample',data=>{if(win&&!win.isDestroyed())win.webContents.send('spacelens:resources',{type:'sample',data});});resourceMonitor.on('status',data=>{if(win&&!win.isDestroyed())win.webContents.send('spacelens:resources',{type:'status',...data});});}return resourceMonitor;};
+app.on('before-quit',event=>{if(resourceMonitor&&!resourcesStopped){event.preventDefault();resourcesStopped=true;resourceMonitor.close().finally(()=>app.quit());}});
+app.on('before-quit',event=>{if(event.defaultPrevented)return;quitting=true;if(service?.scanning){event.preventDefault();service.cancel();service.idlePromise.finally(()=>app.quit());}else if(service?.cleanupEngine?.busy){event.preventDefault();service.cleanupEngine.cancel();service.cleanupEngine.idlePromise.finally(()=>app.quit());}else if(service?.searcher&&!searchStopped){event.preventDefault();searchStopped=true;service.searcher.shutdown().finally(()=>app.quit());}else service?.close();});
 if(!gotLock)app.quit();
 else {
   app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.show();win.focus();}});
@@ -31,6 +33,19 @@ else {
     ipcMain.handle('spacelens:invoke',async(event,method,args={})=>{
       if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame)throw new Error('无效的请求来源');
       if(allowed.has(method))return service[method](args);
+      if(method==='resourcesStart'){const monitor=getResources();monitor.start();return {hardware:await monitor.getHardware(),sample:monitor.latest};}
+      if(method==='resourcesSnapshot')return getResources().snapshot();
+      if(method==='resourcesActive')return resourceMonitor?resourceMonitor.request('interval',{milliseconds:args.active?1000:5000}):{ok:true};
+      if(method==='resourcesNetwork')return getResources().request(args.enabled?'network-enable':'network-disable');
+      if(method==='resourcesRestart'){await getResources().close();getResources().start();return {hardware:await getResources().getHardware(),sample:getResources().latest};}
+      if(method==='resourcesControl'){
+        const monitor=getResources(),snapshot=await monitor.snapshot();const target=snapshot.processes.find(p=>p.pid===args.pid&&p.created===String(args.created));
+        if(!target)throw Error('进程已变化，请重新选择');
+        const verbs={terminate:'结束进程',pause:'暂停最多 60 秒',resume:'恢复运行',lower:'降低 CPU 优先级',restore:'恢复原优先级'};
+        if(!verbs[args.action])throw Error('不支持的操作');
+        if(['terminate','pause'].includes(args.action)){const r=await dialog.showMessageBox(win,{type:'warning',title:verbs[args.action],message:verbs[args.action]+'：'+target.name+'（PID '+target.pid+'）？',detail:target.path+'\n\n'+(args.action==='terminate'?'未保存的内容可能丢失。只结束所选进程，不批量结束同名应用。':'该进程会暂时停止响应；最多 60 秒后自动恢复，也可立即点击恢复。'),buttons:['取消',verbs[args.action]],defaultId:0,cancelId:0,noLink:true});if(r.response!==1)return {cancelled:true};}
+        return monitor.control(args);
+      }
       if(method==='searchEnable')return service.searchEngine.installService();
       if(method==='searchRefresh')return service.searchEngine.refresh();
       if(['searchOpen','searchReveal','searchCopy','searchThumbnail'].includes(method)){

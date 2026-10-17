@@ -12,6 +12,8 @@
 /src/scanner/obj/
 /src/search-native/bin/
 /src/search-native/obj/
+/src/monitor-native/bin/
+/src/monitor-native/obj/
 !/scripts/
 !/scripts/**
 !/tests/
@@ -19,6 +21,8 @@
 !/tests/scanner-contract.cjs
 !/tests/product-e2e.cjs
 !/tests/search-e2e.cjs
+!/tests/resources-e2e.cjs
+!/tests/monitor-contract.cjs
 !/assets/
 !/assets/spacelens.ico
 !/assets/spacelens.png
@@ -29,6 +33,7 @@
 !/licenses/
 !/licenses/Electron-LICENSE.txt
 !/licenses/Everything-LICENSE.txt
+!/licenses/TraceEvent-LICENSE.txt
 !/licenses/DotNet-LICENSE.txt
 !/licenses/DotNet-ThirdPartyNotices.txt
 !/docs/

@@ -25,6 +25,7 @@ for(const name of ['README.md','LICENSE','THIRD_PARTY_NOTICES.md','package.json'
 copy(path.join(root,'licenses','Electron-LICENSE.txt'),path.join(out,'licenses','Electron-LICENSE.txt'));
 for(const name of ['DotNet-LICENSE.txt','DotNet-ThirdPartyNotices.txt'])copy(path.join(root,'licenses',name),path.join(out,'licenses',name));
 copy(path.join(root,'licenses','Everything-LICENSE.txt'),path.join(out,'licenses','Everything-LICENSE.txt'));
+copy(path.join(root,'licenses','TraceEvent-LICENSE.txt'),path.join(out,'licenses','TraceEvent-LICENSE.txt'));
 copy(path.join(root,'docs','OPEN_SOURCE.md'),path.join(out,'docs','OPEN_SOURCE.md'));
 if(fs.existsSync(path.join(root,'assets','demo')))tree(path.join(root,'assets','demo'),path.join(out,'assets','demo'));
 fs.mkdirSync(path.join(out,'resources','app'),{recursive:true});
@@ -33,6 +34,7 @@ fs.writeFileSync(path.join(out,'spacelens.cmd'),'@echo off\r\nsetlocal\r\nset "E
 fs.writeFileSync(path.join(out,'Start SpaceLens.cmd'),'@echo off\r\nsetlocal\r\nset "ELECTRON_RUN_AS_NODE="\r\nstart "" "%~dp0SpaceLens.exe"\r\n');
 run('dotnet',['publish',path.join(root,'src','scanner','SpaceLens.Scanner.csproj'),'-c','Release','-r','win-x64','--self-contained','true','-o',path.join(out,'runtime','scanner')]);
 run('dotnet',['publish',path.join(root,'src','search-native','SpaceLens.Search.csproj'),'-c','Release','-r','win-x64','--self-contained','true','-o',path.join(out,'runtime','search')]);
+run('dotnet',['publish',path.join(root,'src','monitor-native','SpaceLens.Monitor.csproj'),'-c','Release','-r','win-x64','--self-contained','true','-o',path.join(out,'runtime','monitor')]);
 const cache=path.join(root,'dist','build-cache');fs.mkdirSync(cache,{recursive:true});
 const archive=path.join(cache,'Everything-1.4.1.1032.x64.zip');
 if(!fs.existsSync(archive))run('curl.exe',['--fail','--location','--retry','3','--max-time','120','--output',archive,'https://www.voidtools.com/Everything-1.4.1.1032.x64.zip']);

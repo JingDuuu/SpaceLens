@@ -28,6 +28,11 @@ jobs:
           New-Item -ItemType Directory -Path runtime/scanner -Force
           Copy-Item dist/SpaceLens/runtime/scanner/SpaceLens.Scanner.exe runtime/scanner/
           node tests/scanner-contract.cjs
+      - name: Resource monitor and real ETW attribution
+        env:
+          SPACELENS_TEST_RELEASE: ${{ github.workspace }}/dist/SpaceLens
+          SPACELENS_TEST_ETW: '1'
+        run: node tests/monitor-contract.cjs
       - uses: actions/upload-artifact@v4
         with:
           name: SpaceLens-Windows-x64

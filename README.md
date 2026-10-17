@@ -1,6 +1,6 @@
 # SpaceLens · 空间透镜
 
-**找文件，看空间，直接整理。** Portable Windows desktop app with Everything-powered instant search, a disk treemap, and reviewed cleanup. 中文大字号界面，支持 CLI / MCP。
+**找文件，看空间，看清实时资源。** Portable Windows desktop app with Everything-powered search, disk treemaps, reviewed cleanup, and live resource monitoring. 中文大字号界面，支持 CLI / MCP。
 
 ## 下载
 
@@ -8,11 +8,26 @@
 
 ![Search with synthetic demo files](assets/demo/search-home.png)
 
-## 两个入口
+## 三个入口
 
 **找文件**是默认首页：大搜索框、清晰的大字结果、类型标签点一下开启 / 再点取消。多种类型可以一起选择。支持磁盘范围、大小和修改时间排序、大小写、完整路径匹配、正则表达式，以及 Everything 的通配符和搜索语法。单击看大预览，双击打开，右键定位或复制路径。Ctrl+K / Ctrl+F 回到搜索框，F5 立即刷新。停留在搜索页时，结果自动跟随索引更新，并保留仍存在的选中项与滚动位置。
 
 **看空间 / 清理**保留扫描进度、空间地图、大文件、软件使用线索、快照对比。单击文件夹，在原色块中透视内部一层；双击进入，Alt+↑ 返回。
+
+**实时资源**展示 CPU、内存、GPU、磁盘活动和上传 / 下载曲线，约每秒更新一次；按资源排序，聚合同一可执行文件的进程，选择后固定列表位置，再选具体 PID 操作。切换到其他页面后降低采样频率。
+
+![Live resources with synthetic data](assets/demo/live-resources.png)
+
+## 实时网络、进程和 AI 预算
+
+- **网卡总速度**直接使用 Windows 接口字节计数，默认仅合计物理网卡，排除虚拟过滤层的重复统计；可选择单张网卡，切换 MB/s / Mbps，填写宽带套餐上限。链路速度不等于互联网可用带宽。
+- **应用流量**点击“启用应用流量”，完成 Windows 权限确认后，以独立 ETW 会话采集 TCP / UDP（IPv4 / IPv6）的收发大小、PID 和连接端点。只提升采集辅助进程权限，桌面保持普通权限；关闭采集或退出程序即结束此会话。不捕获数据包内容，不解析 HTTPS 内容或猜测浏览器标签页。
+- 应用流量包含局域网、VPN 和回环通信，与物理网卡计数口径不同；界面不将两者强行配平。权限不足、采集断开、事件丢失和端点截断会明确显示，不把未知值显示为 0。
+- **进程控制**支持结束、暂停 / 恢复、降低 / 恢复 CPU 优先级；只针对明确选中的 PID，并复核创建时间以避免 PID 重用误操作。结束与暂停有原生确认。系统目录、关键进程、其他账户及 SpaceLens 自身受保护。暂停最多 60 秒，独立守护进程在连接关闭时恢复；退出监控也会恢复其修改的优先级。暂停可能短暂影响依赖它的其他应用。
+- **GPU**读取 Windows WDDM 引擎与显存计数；NVIDIA 驱动可用时额外读取 NVML 温度、功耗、显存和 CUDA 计算能力。驱动计数口径可能不同；缺失就显示未知。进程 GPU 百分比不直接相加；共享内存的进程工作集也可能重复。
+- **AI 算力 / 显存预算**读取硬件与当前可用资源，可试算 8B / 14B / 32B / 70B 参考结构在不同量化、上下文和并发下的权重、KV 缓存与运行预留。结果是透明公式的容量估算，不是具体模型兼容性或 tokens/s 承诺，也不自动相加多卡显存。当前未采集专用 NPU 性能计数。
+
+![AI memory budget with synthetic hardware](assets/demo/ai-budget.png)
 
 ![Folder preview with synthetic demo files](assets/demo/folder-preview.png)
 
@@ -41,6 +56,8 @@
 
 ```powershell
 .\spacelens.cmd search-status
+.\spacelens.cmd resources
+.\spacelens.cmd hardware
 .\spacelens.cmd search --query "Moonlight" --type video --limit 50
 .\spacelens.cmd search --query "*.png" --drive 'D:\' --sort modified
 .\spacelens.cmd scan --path 'D:\'

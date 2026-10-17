@@ -12,6 +12,9 @@
   <link rel="stylesheet" href="search.css">
   <script src="cleanup-large.js" defer></script>
   <script src="search.js" defer></script>
+  <link rel="stylesheet" href="resources.css">
+  <script src="resource-model.js" defer></script>
+  <script src="resources.js" defer></script>
 </head>
 <body>
   <svg class="icon-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -121,7 +124,7 @@
         <div class="rail-footer"><svg><use href="#i-check"/></svg><p>先看清，再整理。<br>清理中心内直接整理。</p></div>
       </aside>
     </div>
-    <footer class="app-footer"><span id="footer-status">准备就绪</span><span>大小按文件逻辑长度统计 · 不跟随目录联接与符号链接</span><span>SpaceLens 2.0</span></footer>
+    <footer class="app-footer"><span id="footer-status">准备就绪</span><span>大小按文件逻辑长度统计 · 不跟随目录联接与符号链接</span><span>SpaceLens 2.1</span></footer>
   </main>
   <dialog id="issues-dialog"><form method="dialog" class="dialog-heading"><h2>扫描中未读取的项目</h2><button class="icon-button" aria-label="关闭扫描问题"><svg><use href="#i-close"/></svg></button></form><p id="issues-summary"></p><div id="issues-list"></div><p class="explanation">无法访问的文件夹、目录联接与符号链接会被跳过，避免重复计数和越界扫描。已显示的大小可能小于实际占用。</p></dialog>
   <div id="toast" class="toast" role="status" hidden></div>

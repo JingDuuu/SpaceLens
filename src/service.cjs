@@ -136,6 +136,9 @@ class SpaceService extends EventEmitter {
   async initializeSpace(){if(!this.spaceInit)this.spaceInit=this.initialize();await this.spaceInit;return this.state();}
   searchStatus(){return this.searchEngine.status();}
   search(args){return this.searchEngine.query(args);}
-  close(){this.searcher?.close();this.store?.close();this.store=null;}
+  get resourcesEngine(){if(!this.resourcesReader)this.resourcesReader=new(require('./resources.cjs').ResourceMonitor)(this.root);return this.resourcesReader;}
+  resources(){return this.resourcesEngine.snapshot();}
+  hardware(){return this.resourcesEngine.getHardware();}
+  close(){this.searcher?.close();this.resourcesReader?.close();this.store?.close();this.store=null;}
 }
 module.exports={SpaceService,ROOT,meta,samePath};
